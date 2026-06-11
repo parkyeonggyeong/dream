@@ -1,0 +1,2273 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>REVEIL — 악몽 수면 분석</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,200;0,300;0,400;1,200&family=DM+Mono:wght@300;400&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --white: #f8fbfc;
+    --blush: #eef6f8;          /* 기존 #fdf5f5 → 연한 블루 베이스 */
+    --blush-deep: #d5e8ed;     /* 기존 #f5ecec → 중간 블루 */
+    --gray-100: #ddeef2;
+    --gray-200: #b5d5dc;
+    --gray-300: #8ab5be;
+    --gray-400: #5a8a95;
+    --gray-600: #393236;       /* 무드보드 #393236 */
+    --gray-900: #1a2428;
+
+  /* 포인트: 핑크 계열로 교체 */
+    --mint: #f3ebee;            /* 기존 민트 → 연핑크 */
+    --mint-light: #fce8ee;
+    --mint-deep: #c47a8a;       /* 기존 민트딥 → 핑크딥 (버튼, 강조) */
+    --pink-blush: #d5ffe2;
+    --pink-accent: #b5dfe4;     /* 기존 핑크액센트 → 블루 (무드보드 #B5DFE4) */
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--blush);
+    color: var(--gray-900);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* 배경 텍스처 */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background:
+      radial-gradient(ellipse 80% 50% at 20% 10%, rgba(232,200,200,0.18) 0%, transparent 60%),
+      radial-gradient(ellipse 60% 40% at 80% 80%, rgba(168,196,191,0.12) 0%, transparent 50%),
+      radial-gradient(ellipse 40% 30% at 50% 50%, rgba(249,240,240,0.3) 0%, transparent 70%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* 형광등 라인 효과 */
+  body::after {
+    content: '';
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(168,196,191,0.6), rgba(232,200,200,0.4), transparent);
+    z-index: 1;
+  }
+
+  .container {
+    position: relative;
+    z-index: 2;
+    max-width: 960px;
+    margin: 0 auto;
+    padding: 0 24px;
+  }
+
+  /* ── HEADER ── */
+  header {
+    padding: 48px 0 0;
+    border-bottom: 1px solid var(--gray-200);
+    margin-bottom: 0;
+  }
+
+  .header-inner {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    padding-bottom: 20px;
+  }
+
+  .logo {
+    font-family: 'DM Mono', monospace;
+    font-weight: 300;
+    font-size: 11px;
+    letter-spacing: 0.3em;
+    color: var(--gray-400);
+    text-transform: uppercase;
+  }
+
+  .logo span {
+    color: #6F8F95;
+  }
+
+  .header-tag {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.2em;
+    color: var(--gray-300);
+    text-transform: uppercase;
+  }
+
+  /* ── INTRO ── */
+  .intro {
+    padding: 64px 0 56px;
+    border-bottom: 1px solid var(--gray-200);
+  }
+
+  .intro-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.3em;
+    color: #6F8F95;
+    text-transform: uppercase;
+    margin-bottom: 24px;
+  }
+
+  .intro h1 {
+    font-size: clamp(28px, 5vw, 44px);
+    font-weight: 200;
+    line-height: 1.25;
+    letter-spacing: -0.02em;
+    color: var(--gray-900);
+    margin-bottom: 20px;
+  }
+
+  .intro h1 em {
+    font-style: italic;
+    color: var(--gray-400);
+  }
+
+  .intro p {
+    font-size: 14px;
+    font-weight: 300;
+    line-height: 1.8;
+    color: var(--gray-400);
+    max-width: 480px;
+    letter-spacing: 0.02em;
+  }
+
+  .start-btn {
+    margin-top: 40px;
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 28px;
+    border: 1px solid var(--gray-300);
+    background: transparent;
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.2em;
+    color: var(--gray-600);
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .start-btn::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: var(--blush-deep);
+    transform: translateX(-100%);
+    transition: transform 0.3s ease;
+  }
+
+  .start-btn:hover::before { transform: translateX(0); }
+  .start-btn:hover { border-color: #6F8F95; color: var(--gray-900); }
+  .start-btn span { position: relative; z-index: 1; }
+
+  .arrow {
+    width: 16px;
+    height: 1px;
+    background: currentColor;
+    position: relative;
+    display: inline-block;
+    transition: width 0.3s ease;
+  }
+  .arrow::after {
+    content: '';
+    position: absolute;
+    right: 0; top: -3px;
+    width: 6px; height: 6px;
+    border-right: 1px solid currentColor;
+    border-top: 1px solid currentColor;
+    transform: rotate(45deg);
+  }
+  .start-btn:hover .arrow { width: 24px; }
+
+  /* ── QUIZ ── */
+  #quiz-section {
+    display: none;
+    padding: 56px 0;
+  }
+
+  .progress-bar {
+    height: 1px;
+    background: var(--gray-200);
+    margin-bottom: 48px;
+    position: relative;
+  }
+
+  .progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--mint-deep), var(--pink-accent));
+    transition: width 0.5s ease;
+    width: 0%;
+  }
+
+  .progress-label {
+    position: absolute;
+    right: 0;
+    top: 8px;
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    color: var(--gray-300);
+    letter-spacing: 0.1em;
+  }
+
+  .question-block {
+    display: none;
+    animation: fadeUp 0.4s ease forwards;
+  }
+
+  .question-block.active { display: block; }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(16px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .q-number {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.3em;
+    color: var(--gray-300);
+    text-transform: uppercase;
+    margin-bottom: 16px;
+  }
+
+  .q-part {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    color: #6F8F95;
+    letter-spacing: 0.2em;
+    margin-bottom: 8px;
+  }
+
+  .q-text {
+    font-size: 22px;
+    font-weight: 200;
+    line-height: 1.4;
+    letter-spacing: -0.01em;
+    color: var(--gray-900);
+    margin-bottom: 8px;
+  }
+
+  .q-sub {
+    font-size: 12px;
+    color: var(--gray-300);
+    font-weight: 300;
+    margin-bottom: 32px;
+    font-family: 'DM Mono', monospace;
+    letter-spacing: 0.1em;
+  }
+
+  .options {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .option {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 14px 18px;
+    border: 1px solid var(--gray-200);
+    background: rgba(250,250,249,0.6);
+    cursor: pointer;
+    transition: all 0.25s ease;
+    position: relative;
+    backdrop-filter: blur(4px);
+  }
+
+  .option:hover {
+    border-color: var(--mint);
+    background: rgba(168,196,191,0.06);
+  }
+
+  .option.selected {
+    border-color: #d4a8b0;     
+    background: rgba(107,168,160,0.08);
+  }
+
+  .option.selected .opt-box {
+    background: #d4a8b0;
+    border-color: #6F8F95;
+  }
+
+  .option.selected .opt-box::after {
+    opacity: 1;
+  }
+
+  .opt-box {
+    width: 16px;
+    height: 16px;
+    border: 1px solid var(--gray-300);
+    flex-shrink: 0;
+    position: relative;
+    transition: all 0.2s ease;
+  }
+
+  .opt-box::after {
+    content: '';
+    position: absolute;
+    inset: 3px;
+    background: white;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+  }
+
+  .opt-label {
+    font-size: 13px;
+    font-weight: 300;
+    color: var(--gray-600);
+    letter-spacing: 0.02em;
+    line-height: 1.4;
+  }
+
+  .option.selected .opt-label {
+    color: var(--gray-900);
+  }
+
+  .q-nav {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: 40px;
+    padding-top: 32px;
+    border-top: 1px solid var(--gray-200);
+  }
+
+  .btn-prev {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.2em;
+    color: var(--gray-300);
+    text-transform: uppercase;
+    background: none;
+    border: none;
+    cursor: pointer;
+    transition: color 0.2s;
+  }
+  .btn-prev:hover { color: var(--gray-600); }
+
+  .btn-next {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 24px;
+    border: 1px solid var(--gray-300);
+    background: transparent;
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.2em;
+    color: var(--gray-600);
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 0.25s ease;
+  }
+
+  .btn-next:hover {
+    border-color: #6F8F95;
+    color: var(--gray-900);
+    background: var(--blush-deep);
+  }
+
+  .btn-next:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+  }
+
+  /* ── RESULT ── */
+  #result-section {
+    display: none;
+    padding: 56px 0 80px;
+  }
+
+  .result-header {
+    padding-bottom: 40px;
+    border-bottom: 1px solid var(--gray-200);
+    margin-bottom: 48px;
+  }
+
+  .result-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.3em;
+    color: #6F8F95;
+    text-transform: uppercase;
+    margin-bottom: 20px;
+  }
+
+  .diagnosis-text {
+    font-size: clamp(15px, 2.5vw, 18px);
+    font-weight: 200;
+    line-height: 1.8;
+    color: var(--gray-600);
+    letter-spacing: 0.01em;
+    border-left: 2px solid #B8D8DA;
+    padding-left: 20px;
+  }
+
+  .diagnosis-text strong {
+    color: var(--gray-900);
+    font-weight: 400;
+  }
+
+  /* 지표 섹션 */
+  .metrics-section {
+    margin-bottom: 56px;
+  }
+
+  .section-title {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.3em;
+    color: var(--gray-300);
+    text-transform: uppercase;
+    margin-bottom: 28px;
+  }
+
+  .metric-item {
+    margin-bottom: 20px;
+  }
+
+  .metric-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 8px;
+  }
+
+  .metric-name {
+    font-size: 12px;
+    font-weight: 300;
+    color: var(--gray-600);
+    letter-spacing: 0.05em;
+  }
+
+  .metric-value {
+    font-family: 'DM Mono', monospace;
+    font-size: 13px;
+    color: var(--gray-900);
+  }
+
+  .metric-bar {
+    height: 8px;
+    background: #E8EEEE;
+    position: relative;
+    overflow: hidden;
+    border-radius: 999px;
+  }
+
+  .metric-fill {
+    height: 100%;
+    width: 0%;
+    border-radius: 999px;
+    background: #B8D8DA !important;
+    transition: width 1.2s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .fill-red { background:#B8D8DA !important; }
+.fill-yellow { background:#B8D8DA !important; }
+.fill-mint { background:#B8D8DA !important; }
+
+  .metric-status {
+    font-family: 'DM Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    margin-top: 4px;
+  }
+
+  .status-high { color: #C98FA4; }
+  .status-mid { color: #D5A7B6; }
+  .status-low { color: #6F8F95; }
+
+  /* 원인 유형 */
+  
+.cause-tag{
+    display:inline-flex;
+    align-items:center;
+    gap:10px;
+    padding:10px 20px;
+    border:1px solid #D8E9EA !important;
+    background:#F8FCFC !important;
+    color:#5E666A !important;
+    border-radius:999px !important;
+    font-family:'Pretendard','Pretendard Variable',sans-serif !important;
+    font-size:14px !important;
+    font-weight:500 !important;
+    letter-spacing:-0.01em !important;
+}
+
+.cause-dot{
+    width:10px !important;
+    height:10px !important;
+    border-radius:50% !important;
+    background:#A9D3D6 !important;
+}
+
+
+  /* 개선방안 */
+  .improvements-section {
+    margin-top: 56px;
+  }
+
+  .improvement-item{
+    background:#FCFDFD !important;
+    border: 1px solid var(--gray-200);
+    margin-bottom: 16px;
+    background: rgba(250,250,249,0.5);
+    animation: fadeUp 0.4s ease forwards;
+    opacity: 0;
+  }
+
+  .improvement-item:nth-child(1) { animation-delay: 0.1s; }
+  .improvement-item:nth-child(2) { animation-delay: 0.2s; }
+  .improvement-item:nth-child(3) { animation-delay: 0.3s; }
+  .improvement-item:nth-child(4) { animation-delay: 0.4s; }
+  .improvement-item:nth-child(5) { animation-delay: 0.5s; }
+
+  .improvement-head {
+    padding: 18px 20px;
+    display: flex;
+    align-items: flex-start;
+    gap: 16px;
+    border-bottom: 1px solid var(--gray-100);
+  }
+
+  .improvement-num {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    color: var(--gray-300);
+    flex-shrink: 0;
+    padding-top: 2px;
+    letter-spacing: 0.1em;
+  }
+
+  .improvement-title {
+    font-size: 15px;
+    font-weight: 300;
+    color: var(--gray-900);
+    letter-spacing: 0.01em;
+    line-height: 1.4;
+  }
+
+  .improvement-basis {
+    font-family: 'DM Mono', monospace;
+    font-size: 9px;
+    color:#D5A7B6;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    margin-top: 4px;
+  }
+
+  .improvement-body {
+    padding: 16px 20px 18px 52px;
+  }
+
+  .improvement-reason {
+    font-size: 12px;
+    font-weight: 300;
+    color: var(--gray-400);
+    line-height: 1.7;
+    margin-bottom: 10px;
+    font-style: italic;
+  }
+
+  .improvement-action {
+    font-size: 13px;
+    font-weight: 300;
+    color: var(--gray-600);
+    line-height: 1.7;
+  }
+
+  /* 다시하기 */
+  .restart-btn {
+    margin-top: 56px;
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 24px;
+    border: 1px solid var(--gray-200);
+    background: transparent;
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.2em;
+    color: var(--gray-300);
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 0.25s ease;
+  }
+  .restart-btn:hover {
+    border-color: var(--gray-300);
+    color: var(--gray-600);
+  }
+
+  /* footer */
+  footer {
+    border-top: 1px solid var(--gray-200);
+    padding: 24px 0;
+    margin-top: 0;
+  }
+
+  .footer-inner {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .footer-note {
+    font-family: 'DM Mono', monospace;
+    font-size: 9px;
+    color: var(--gray-300);
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+  }
+
+  /* 반응형 */
+  @media (max-width: 480px) {
+    .intro h1 { font-size: 26px; }
+    .q-text { font-size: 18px; }
+    .header-inner { flex-direction: column; align-items: flex-start; gap: 8px; }
+  }
+
+  /* ── TRANSITION SCREEN ── */
+  #transition-screen {
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 999;
+    background: var(--blush);
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+  }
+
+  #transition-screen.visible {
+    display: flex;
+    animation: transIn 0.35s ease forwards;
+  }
+
+  #transition-screen.fade-out {
+    animation: transOut 0.35s ease forwards;
+  }
+
+  @keyframes transIn {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+  }
+
+  @keyframes transOut {
+    from { opacity: 1; }
+    to   { opacity: 0; }
+  }
+
+  .trans-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.35em;
+    color: var(--gray-300);
+    text-transform: uppercase;
+    margin-bottom: 28px;
+    opacity: 0;
+    animation: fadeUp 0.3s ease 0.05s forwards;
+  }
+
+  .trans-type {
+    font-size: clamp(32px, 7vw, 60px);
+    font-weight: 200;
+    letter-spacing: -0.02em;
+    color: var(--gray-900);
+    text-align: center;
+    line-height: 1.2;
+    opacity: 0;
+    animation: fadeUp 0.35s ease 0.15s forwards;
+  }
+
+  .trans-type em {
+    font-style: italic;
+    color: #6F8F95;
+  }
+
+  .trans-divider {
+    width: 40px;
+    height: 1px;
+    background: var(--gray-300);
+    margin: 28px auto;
+    opacity: 0;
+    animation: fadeUp 0.3s ease 0.3s forwards;
+  }
+
+/* ===== V3 Cohesive UI ===== */
+.container{max-width:900px;}
+.logo{letter-spacing:.12em!important;}
+.header-tag{letter-spacing:.08em!important;}
+
+.intro,.result-header,#quiz-section{
+    position:relative;
+}
+.intro-label,.result-label,.section-title{
+    letter-spacing:.12em!important;
+}
+
+.progress-bar{
+    margin-bottom:64px!important;
+}
+.progress-label{
+    top:-18px!important;
+    font-size:11px!important;
+}
+
+.question-header{
+    display:flex;
+    justify-content:space-between;
+    align-items:flex-start;
+    margin-bottom:20px;
+}
+.q-part{
+    font-size:22px!important;
+    font-weight:300!important;
+    color:var(--gray-400)!important;
+    letter-spacing:.02em!important;
+    margin-bottom:0!important;
+}
+.q-part::after{
+    content:'';
+    display:block;
+    width:30px;
+    height:1px;
+    background:var(--gray-300);
+    margin-top:12px;
+}
+.q-number{
+    font-size:11px!important;
+    letter-spacing:.08em!important;
+    color:var(--gray-300)!important;
+}
+
+.q-text{
+    font-size:36px!important;
+    line-height:1.35!important;
+    margin-bottom:12px!important;
+}
+.q-sub{
+    margin-bottom:36px!important;
+}
+
+.options{
+    width:78%;
+    max-width:620px;
+    gap:14px!important;
+}
+.option{
+    border-radius:14px!important;
+    padding:16px 20px!important;
+    background:rgba(255,255,255,.45)!important;
+}
+.opt-box{
+    border-radius:4px;
+}
+
+.btn-next,
+.start-btn,
+.restart-btn{
+    border-radius:16px!important;
+}
+
+.btn-next{
+    background:linear-gradient(135deg,#9bcad6,#87bcc8)!important;
+    color:#fff!important;
+    border:none!important;
+    padding:14px 28px!important;
+}
+
+.start-btn{
+    border-radius:18px!important;
+    background:rgba(255,255,255,.4);
+}
+
+.result-header{
+    background:rgba(255,255,255,.28);
+    border:1px solid var(--gray-100);
+    border-radius:18px;
+    padding:32px;
+}
+
+.metrics-section,
+.improvements-section{
+    background:rgba(255,255,255,.20);
+    border-radius:18px;
+    padding:28px;
+    margin-top:24px;
+}
+
+.improvement-item,
+.cause-tag{
+    border-radius:14px!important;
+}
+
+.diagnosis-text{
+    font-size:17px!important;
+}
+
+
+/* ===== V5 App-like Redesign ===== */
+.container{padding:0 32px;}
+header{
+  padding:28px 0 0;
+  border-bottom:none!important;
+}
+.header-inner{
+  padding-bottom:12px!important;
+}
+.intro{
+  text-align:center;
+  padding:90px 0 70px!important;
+  border-bottom:none!important;
+}
+.intro h1{
+  max-width:700px;
+  margin:0 auto 24px auto!important;
+}
+.intro p{
+  margin:0 auto!important;
+  font-size:16px!important;
+}
+.start-btn{
+  margin-top:36px!important;
+  border-radius:18px!important;
+  padding:16px 34px!important;
+}
+.intro-features{
+ display:flex;
+ justify-content:center;
+ gap:18px;
+ margin-top:40px;
+ flex-wrap:wrap;
+}
+.intro-feature{
+ padding:10px 16px;
+ border:1px solid var(--gray-200);
+ border-radius:999px;
+ font-size:12px;
+ color:var(--gray-400);
+ background:rgba(255,255,255,.35);
+}
+
+.progress-bar{
+ margin:30px auto 60px auto!important;
+ max-width:700px;
+}
+.question-block{
+ max-width:700px;
+ margin:0 auto;
+}
+.q-part{display:none!important;}
+.q-number{
+ position:static!important;
+ font-size:12px!important;
+ margin-bottom:14px;
+ display:block;
+}
+.q-text{
+ font-size:38px!important;
+}
+.options{
+ width:100%!important;
+ max-width:none!important;
+}
+.option{
+ border-radius:16px!important;
+}
+.q-nav{
+ border-top:none!important;
+ margin-top:26px!important;
+}
+.btn-next,.restart-btn,.start-btn{
+ border-radius:18px!important;
+}
+.result-header,
+.metrics-section,
+.improvements-section{
+ max-width:760px;
+ margin-left:auto;
+ margin-right:auto;
+}
+.section-title,
+.result-label{
+ letter-spacing:.05em!important;
+}
+
+
+/* ===== Hero Layout Fix ===== */
+.container{
+  max-width:1100px !important;
+}
+
+.intro{
+  min-height:72vh;
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+  align-items:center;
+  text-align:center;
+  padding:0 !important;
+}
+
+.intro h1{
+  max-width:800px;
+  font-size:clamp(52px,5vw,72px)!important;
+  line-height:1.15!important;
+  margin-bottom:28px!important;
+}
+
+.intro p{
+  max-width:520px;
+  margin-bottom:12px!important;
+}
+
+.start-btn{
+  margin-top:28px!important;
+}
+
+footer{
+  margin-top:40px;
+}
+
+.question-block{
+  max-width:760px!important;
+}
+
+.progress-bar{
+  max-width:760px!important;
+}
+
+
+/* ===== V8 Minimal Real-Service ===== */
+.header-right,
+.version,
+.protocol{
+  opacity:.55;
+}
+
+.logo-wrap .subtext,
+.header-tag{
+  display:none !important;
+}
+
+.intro-features{
+  display:none !important;
+}
+
+.intro{
+  min-height:68vh !important;
+}
+
+.intro h1{
+  font-weight:300 !important;
+  letter-spacing:-0.03em;
+}
+
+.intro h1::after{
+  content:'';
+  display:block;
+  width:56px;
+  height:2px;
+  margin:28px auto 0;
+  background:rgba(150,190,200,.8);
+}
+
+.intro p{
+  margin-top:28px !important;
+  font-size:15px !important;
+}
+
+.start-btn{
+  margin-top:34px !important;
+  min-width:170px;
+}
+
+footer{
+  opacity:.75;
+}
+
+header{
+  border-bottom:none !important;
+}
+
+.header-inner{
+  padding-top:10px;
+}
+
+
+/* ===== V9 Typography Refresh ===== */
+body{
+  font-family:'Pretendard','Noto Sans KR',system-ui,sans-serif !important;
+}
+
+.logo,
+.q-number,
+.progress-label{
+  font-family:'Pretendard','Noto Sans KR',sans-serif !important;
+  letter-spacing:0.04em !important;
+}
+
+.intro h1{
+  font-weight:400 !important;
+  letter-spacing:-0.045em !important;
+}
+
+.q-text{
+  font-family:'Pretendard','Noto Sans KR',sans-serif !important;
+  font-weight:400 !important;
+  letter-spacing:-0.03em !important;
+}
+
+.option{
+  font-family:'Pretendard','Noto Sans KR',sans-serif !important;
+  font-size:16px !important;
+}
+
+.start-btn,
+.btn-next,
+.btn-prev{
+  font-family:'Pretendard','Noto Sans KR',sans-serif !important;
+  font-weight:500 !important;
+}
+
+.result-title,
+.diagnosis-title{
+  font-weight:600 !important;
+}
+
+
+.btn-next:disabled{
+  opacity:.35 !important;
+  cursor:not-allowed !important;
+  transform:none !important;
+  box-shadow:none !important;
+}
+
+
+/* ===== V12 Color Rebalance ===== */
+
+/* 배경은 거의 흰색 */
+body{
+  background:#FAFBFB !important;
+}
+
+/* 제목 계열은 민트 제거 */
+.intro h1,
+.q-text,
+.result-title,
+.diagnosis-title{
+  color:#35383A !important;
+}
+
+/* 로고도 민트 제거 */
+.logo{
+  color:#4A5054 !important;
+}
+
+/* 보조 텍스트 */
+.intro p,
+.q-sub,
+.metric-label,
+.diagnosis-text,
+.q-number{
+  color:#6D7377 !important;
+}
+
+/* 민트는 버튼과 진행바 중심 */
+.start-btn,
+.btn-next{
+  background:linear-gradient(
+    135deg,
+    #B8D8DA,
+    #C9E3E4
+  ) !important;
+  color:#35383A !important;
+}
+
+.progress-fill,
+.metric-fill{
+  background:#B8D8DA !important;
+}
+
+/* 카드 */
+.option{
+  background:#FFFFFF !important;
+  border:1px solid #DCE8E9 !important;
+}
+
+.option.selected{
+  background:#F3F8F8 !important;
+  border-color:#B8D8DA !important;
+}
+
+/* 선들도 민트 말고 연회색 */
+hr,
+.progress-bar,
+header,
+footer{
+  border-color:#E6ECEC !important;
+}
+
+
+/* ===== V13 Remove AI Gradient ===== */
+
+/* 완전 단색 배경 */
+html, body{
+  background:#FAFBFB !important;
+  background-image:none !important;
+}
+
+/* 컨테이너, 섹션에 숨어있는 그라데이션 제거 */
+.intro,
+.container,
+main,
+section,
+.result-header,
+.metrics-section,
+.improvements-section{
+  background-image:none !important;
+}
+
+/* 카드도 단색 */
+.option{
+  background:#FFFFFF !important;
+}
+
+/* 버튼만 아주 약한 그라데이션 유지 */
+.start-btn,
+.btn-next{
+  background:linear-gradient(
+    135deg,
+    #BCDCDD,
+    #C9E3E4
+  ) !important;
+}
+
+/* 그림자도 살짝 약화 */
+.start-btn,
+.btn-next,
+.option{
+  box-shadow:none !important;
+}
+
+
+/* ===== USER REQUEST FINAL ===== */
+/* 체크박스만 제거, 버튼/레이아웃 건드리지 않음 */
+
+.opt-box{
+  display:none !important;
+}
+
+.option{
+  gap:0 !important;
+  padding-left:22px !important;
+}
+
+.option.selected{
+  background:#F3F8F8 !important;
+  border-color:#B8D8DA !important;
+}
+
+/* 기존 핑크 선택색 제거 */
+.option.selected .opt-box,
+.option.selected .opt-box::after{
+  background:#F3EBEE !important;
+  border-color:#F3EBEE !important;
+}
+
+/* 하단 안내 */
+.survey-tip{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  margin-top:18px;
+  color:#8B9598;
+  font-size:12px;
+}
+
+
+/* ===== Option Card Interaction ===== */
+/* 답변 선택 카드만 반응 추가 */
+
+.option{
+  transition:
+    transform .12s ease,
+    background-color .18s ease,
+    border-color .18s ease !important;
+}
+
+.option:hover{
+  transform:translateY(-1px);
+}
+
+.option:active{
+  transform:scale(0.985);
+}
+
+.option.selected{
+  transform:scale(1.01);
+}
+
+
+/* ===== Option Feedback Cleanup ===== */
+.option,
+.option:hover,
+.option:active,
+.option.selected{
+  transform:none !important;
+}
+
+.option{
+  transition:
+    background-color .15s ease,
+    border-color .15s ease !important;
+}
+
+.option:hover{
+  background:#FCFEFE !important;
+}
+
+.option.selected{
+  background:#F3F8F8 !important;
+  border-color:#B8D8DA !important;
+}
+
+
+/* ===== Micro Interaction ===== */
+/* 진짜 미세하게만 */
+
+.option{
+  transition:
+    transform .12s ease,
+    background-color .15s ease,
+    border-color .15s ease !important;
+}
+
+.option:hover{
+  transform:translateY(-0.5px) !important;
+}
+
+.option:active{
+  transform:scale(0.997) !important;
+}
+
+.option.selected{
+  transform:none !important;
+}
+
+
+/* ===== Refined Micro Interaction ===== */
+/* 위로 이동 제거, 눌림만 아주 약하게 */
+
+.option:hover{
+  transform:none !important;
+}
+
+.option:active{
+  transform:scale(0.9985) !important;
+}
+
+.option.selected{
+  transform:none !important;
+}
+
+
+/* ===== FONT UNIFICATION ===== */
+*,
+*::before,
+*::after{
+  font-family:'Pretendard','Pretendard Variable',sans-serif !important;
+}
+
+/* 하단 안내 제거 */
+.survey-tip{
+  display:none !important;
+}
+
+
+/* ===== App-style Progress Bar ===== */
+.progress-bar,
+.progress-track{
+    height: 6px !important;
+    border-radius: 999px !important;
+    background: #E8EEEE !important;
+    overflow: hidden !important;
+}
+
+.progress-fill{
+    height: 100% !important;
+    background: #B8D8DA !important;
+    border-radius: 999px !important;
+    width: 0%;
+    transition: width .35s ease !important;
+}
+
+
+/* ===== Remove Background Gradient ===== */
+html, body{
+    background: #FAFBFB !important;
+    background-image: none !important;
+}
+
+body::before,
+body::after{
+    display:none !important;
+}
+
+.container,
+.main,
+.wrapper{
+    background: transparent !important;
+}
+
+
+/* ===== Soft Neutral Gradient ===== */
+/* 핑크끼 제거하고 아주 약하게만 */
+
+html, body{
+  background:
+    radial-gradient(
+      ellipse 90% 55% at 20% 10%,
+      rgba(184,216,218,0.08) 0%,
+      transparent 60%
+    ),
+    radial-gradient(
+      ellipse 70% 45% at 80% 85%,
+      rgba(201,227,228,0.06) 0%,
+      transparent 55%
+    ),
+    #FAFBFB !important;
+}
+
+body::before,
+body::after{
+  display:none !important;
+}
+
+
+.result-label,
+.section-title{
+    color:#6F8F95 !important;
+}
+
+.type-summary{
+  margin-bottom:28px;
+  padding-bottom:24px;
+  border-bottom:1px solid #E6ECEC;
+}
+.type-label{
+  font-size:12px;
+  color:#6F8F95;
+  margin-bottom:10px;
+  letter-spacing:.02em;
+}
+.type-name{
+  font-size:34px;
+  font-weight:600;
+  color:#35383A;
+  line-height:1.2;
+  margin-bottom:10px;
+}
+.type-desc{
+  font-size:14px;
+  color:#6D7377;
+  line-height:1.7;
+}
+
+
+.status-high{color:#C98FA4 !important;}
+.status-mid{color:#D5A7B6 !important;}
+.improvement-basis{color:#D5A7B6 !important;}
+</style>
+
+
+
+<style id="cta-upgrade">
+.start-btn{
+  background:linear-gradient(135deg,#97c8d3,#7fb7c4)!important;
+  border:none!important;
+  color:white!important;
+  box-shadow:0 12px 30px rgba(127,183,196,.25);
+  font-weight:500;
+  transform:translateY(0);
+  transition:all .25s ease;
+}
+
+.start-btn:hover{
+  transform:translateY(-2px);
+  box-shadow:0 18px 40px rgba(127,183,196,.35);
+}
+
+.start-btn::before{
+  display:none!important;
+}
+
+.start-btn .arrow{
+  background:currentColor!important;
+}
+.start-btn .arrow::after{
+  border-color:currentColor!important;
+}
+
+/* ===== V8 Minimal Real-Service ===== */
+.header-right,
+.version,
+.protocol{
+  opacity:.55;
+}
+
+.logo-wrap .subtext,
+.header-tag{
+  display:none !important;
+}
+
+.intro-features{
+  display:none !important;
+}
+
+.intro{
+  min-height:68vh !important;
+}
+
+.intro h1{
+  font-weight:300 !important;
+  letter-spacing:-0.03em;
+}
+
+.intro h1::after{
+  content:'';
+  display:block;
+  width:56px;
+  height:2px;
+  margin:28px auto 0;
+  background:rgba(150,190,200,.8);
+}
+
+.intro p{
+  margin-top:28px !important;
+  font-size:15px !important;
+}
+
+.start-btn{
+  margin-top:34px !important;
+  min-width:170px;
+}
+
+footer{
+  opacity:.75;
+}
+
+header{
+  border-bottom:none !important;
+}
+
+.header-inner{
+  padding-top:10px;
+}
+
+
+/* ===== V9 Typography Refresh ===== */
+body{
+  font-family:'Pretendard','Noto Sans KR',system-ui,sans-serif !important;
+}
+
+.logo,
+.q-number,
+.progress-label{
+  font-family:'Pretendard','Noto Sans KR',sans-serif !important;
+  letter-spacing:0.04em !important;
+}
+
+.intro h1{
+  font-weight:400 !important;
+  letter-spacing:-0.045em !important;
+}
+
+.q-text{
+  font-family:'Pretendard','Noto Sans KR',sans-serif !important;
+  font-weight:400 !important;
+  letter-spacing:-0.03em !important;
+}
+
+.option{
+  font-family:'Pretendard','Noto Sans KR',sans-serif !important;
+  font-size:16px !important;
+}
+
+.start-btn,
+.btn-next,
+.btn-prev{
+  font-family:'Pretendard','Noto Sans KR',sans-serif !important;
+  font-weight:500 !important;
+}
+
+.result-title,
+.diagnosis-title{
+  font-weight:600 !important;
+}
+
+
+.btn-next:disabled{
+  opacity:.35 !important;
+  cursor:not-allowed !important;
+  transform:none !important;
+  box-shadow:none !important;
+}
+
+
+/* ===== V12 Color Rebalance ===== */
+
+/* 배경은 거의 흰색 */
+body{
+  background:#FAFBFB !important;
+}
+
+/* 제목 계열은 민트 제거 */
+.intro h1,
+.q-text,
+.result-title,
+.diagnosis-title{
+  color:#35383A !important;
+}
+
+/* 로고도 민트 제거 */
+.logo{
+  color:#4A5054 !important;
+}
+
+/* 보조 텍스트 */
+.intro p,
+.q-sub,
+.metric-label,
+.diagnosis-text,
+.q-number{
+  color:#6D7377 !important;
+}
+
+/* 민트는 버튼과 진행바 중심 */
+.start-btn,
+.btn-next{
+  background:linear-gradient(
+    135deg,
+    #B8D8DA,
+    #C9E3E4
+  ) !important;
+  color:#35383A !important;
+}
+
+.progress-fill,
+.metric-fill{
+  background:#B8D8DA !important;
+}
+
+/* 카드 */
+.option{
+  background:#FFFFFF !important;
+  border:1px solid #DCE8E9 !important;
+}
+
+.option.selected{
+  background:#F3F8F8 !important;
+  border-color:#B8D8DA !important;
+}
+
+/* 선들도 민트 말고 연회색 */
+hr,
+.progress-bar,
+header,
+footer{
+  border-color:#E6ECEC !important;
+}
+
+
+/* ===== V13 Remove AI Gradient ===== */
+
+/* 완전 단색 배경 */
+html, body{
+  background:#FAFBFB !important;
+  background-image:none !important;
+}
+
+/* 컨테이너, 섹션에 숨어있는 그라데이션 제거 */
+.intro,
+.container,
+main,
+section,
+.result-header,
+.metrics-section,
+.improvements-section{
+  background-image:none !important;
+}
+
+/* 카드도 단색 */
+.option{
+  background:#FFFFFF !important;
+}
+
+/* 버튼만 아주 약한 그라데이션 유지 */
+.start-btn,
+.btn-next{
+  background:linear-gradient(
+    135deg,
+    #BCDCDD,
+    #C9E3E4
+  ) !important;
+}
+
+/* 그림자도 살짝 약화 */
+.start-btn,
+.btn-next,
+.option{
+  box-shadow:none !important;
+}
+
+</style>
+
+
+<style id="improvement-border-fix">
+.improvement-item{
+    overflow:hidden !important;
+    border-radius:24px !important;
+    border:1px solid #D8E9EA !important;
+}
+
+.improvement-head{
+    border-bottom:1px solid #D8E9EA !important;
+    background:#FCFDFD !important;
+}
+
+.improvement-body{
+    background:#FCFDFD !important;
+}
+</style>
+
+
+<style id="option-width-tweak">
+/* 답변 버튼 가로폭 살짝 축소 */
+.question-block .options{
+    width:94% !important;
+    max-width:760px !important;
+    margin:0 auto !important;
+}
+</style>
+
+</head>
+<body>
+
+<div class="container">
+  <header>
+    <div class="header-inner">
+      <div class="logo">REVEIL<span> ·</span> 수면 분석 시스템</div>
+      <div class="header-tag">v1.0 — nightmare protocol</div>
+    </div>
+  </header>
+
+  <!-- INTRO -->
+  <section id="intro-section">
+    <div class="intro">
+      
+      <h1>반복되는 악몽,<br>원인을 알고 계신가요?</h1>
+      <p>8개의 질문을 통해<br>악몽의 원인과 수면 개선 방법을 확인해보세요.</p>
+      <button class="start-btn" onclick="startQuiz()">
+        <span>분석 시작</span>
+        <span class="arrow"></span>
+      </button>
+      <div class="intro-features">
+        <div class="intro-feature">약 2분 소요</div>
+        <div class="intro-feature">8개 질문</div>
+        <div class="intro-feature">맞춤형 분석</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- QUIZ -->
+  <section id="quiz-section">
+    <div class="progress-bar">
+      <div class="progress-fill" id="progress-fill"></div>
+      <div class="progress-label" id="progress-label">0 / 8</div>
+    </div>
+
+    <!-- Q1 -->
+    <div class="question-block" id="q1">
+      <div class="question-header"><div class="q-part">신체 반응</div><div class="q-number">Question 01 / 08</div></div>
+      <div class="q-text">악몽에서 깼을 때<br>어떤 신체 반응이 있었나요?</div>
+      <div class="q-sub">복수 선택 가능</div>
+      <div class="options" id="opts-1">
+        <div class="option" onclick="toggleOption(this, 1, 'heart')"><div class="opt-box"></div><div class="opt-label">심장이 빠르게 뛰었다</div></div>
+        <div class="option" onclick="toggleOption(this, 1, 'sweat')"><div class="opt-box"></div><div class="opt-label">땀이 났다</div></div>
+        <div class="option" onclick="toggleOption(this, 1, 'breath')"><div class="opt-box"></div><div class="opt-label">호흡이 가빠졌다</div></div>
+        <div class="option" onclick="toggleOption(this, 1, 'muscle')"><div class="opt-box"></div><div class="opt-label">몸이 굳거나 근육이 긴장됐다</div></div>
+        <div class="option" onclick="toggleOption(this, 1, 'none')"><div class="opt-box"></div><div class="opt-label">별다른 반응 없었다</div></div>
+      </div>
+      <div class="q-nav">
+        <div></div>
+        <button class="btn-next" disabled onclick="nextQ(1)"><span>다음</span> <span class="arrow"></span></button>
+      </div>
+    </div>
+
+    <!-- Q2 -->
+    <div class="question-block" id="q2">
+      <div class="question-header"><div class="q-part">신체 반응</div><div class="q-number">Question 02 / 08</div></div>
+      <div class="q-text">깨고 나서 진정되기까지<br>얼마나 걸렸나요?</div>
+      <div class="q-sub">단일 선택</div>
+      <div class="options" id="opts-2">
+        <div class="option" onclick="selectSingle(this, 2, 'instant')"><div class="opt-box"></div><div class="opt-label">바로 진정됐다</div></div>
+        <div class="option" onclick="selectSingle(this, 2, 'short')"><div class="opt-box"></div><div class="opt-label">5~10분 정도 걸렸다</div></div>
+        <div class="option" onclick="selectSingle(this, 2, 'long')"><div class="opt-box"></div><div class="opt-label">30분 이상 걸렸다</div></div>
+        <div class="option" onclick="selectSingle(this, 2, 'never')"><div class="opt-box"></div><div class="opt-label">진정이 안 됐다</div></div>
+      </div>
+      <div class="q-nav">
+        <button class="btn-prev" onclick="prevQ(2)">← 이전</button>
+        <button class="btn-next" disabled onclick="nextQ(2)"><span>다음</span> <span class="arrow"></span></button>
+      </div>
+    </div>
+
+    <!-- Q3 -->
+    <div class="question-block" id="q3">
+      <div class="question-header"><div class="q-part">신체 반응</div><div class="q-number">Question 03 / 08</div></div>
+      <div class="q-text">다시 잠드는 게<br>어땠나요?</div>
+      <div class="q-sub">단일 선택</div>
+      <div class="options" id="opts-3">
+        <div class="option" onclick="selectSingle(this, 3, 'easy')"><div class="opt-box"></div><div class="opt-label">바로 잠들었다</div></div>
+        <div class="option" onclick="selectSingle(this, 3, 'scared')"><div class="opt-box"></div><div class="opt-label">무서워서 잠들기 힘들었다</div></div>
+        <div class="option" onclick="selectSingle(this, 3, 'forced')"><div class="opt-box"></div><div class="opt-label">억지로 참고 잠들었다</div></div>
+        <div class="option" onclick="selectSingle(this, 3, 'impossible')"><div class="opt-box"></div><div class="opt-label">아예 못 잠들었다</div></div>
+      </div>
+      <div class="q-nav">
+        <button class="btn-prev" onclick="prevQ(3)">← 이전</button>
+        <button class="btn-next" disabled onclick="nextQ(3)"><span>다음</span> <span class="arrow"></span></button>
+      </div>
+    </div>
+
+    <!-- Q4 -->
+    <div class="question-block" id="q4">
+      <div class="question-header"><div class="q-part">악몽 패턴</div><div class="q-number">Question 04 / 08</div></div>
+      <div class="q-text">비슷한 악몽이<br>반복되는 편인가요?</div>
+      <div class="q-sub">단일 선택</div>
+      <div class="options" id="opts-4">
+        <div class="option" onclick="selectSingle(this, 4, 'always')"><div class="opt-box"></div><div class="opt-label">항상 비슷한 악몽을 꾼다</div></div>
+        <div class="option" onclick="selectSingle(this, 4, 'sometimes')"><div class="opt-box"></div><div class="opt-label">가끔 비슷한 게 반복된다</div></div>
+        <div class="option" onclick="selectSingle(this, 4, 'different')"><div class="opt-box"></div><div class="opt-label">매번 다른 악몽을 꾼다</div></div>
+      </div>
+      <div class="q-nav">
+        <button class="btn-prev" onclick="prevQ(4)">← 이전</button>
+        <button class="btn-next" disabled onclick="nextQ(4)"><span>다음</span> <span class="arrow"></span></button>
+      </div>
+    </div>
+
+    <!-- Q5 -->
+    <div class="question-block" id="q5">
+      <div class="question-header"><div class="q-part">악몽 패턴</div><div class="q-number">Question 05 / 08</div></div>
+      <div class="q-text">악몽을 꾸는 빈도는<br>어느 정도인가요?</div>
+      <div class="q-sub">단일 선택</div>
+      <div class="options" id="opts-5">
+        <div class="option" onclick="selectSingle(this, 5, 'daily')"><div class="opt-box"></div><div class="opt-label">거의 매일</div></div>
+        <div class="option" onclick="selectSingle(this, 5, 'weekly')"><div class="opt-box"></div><div class="opt-label">주 2~3회</div></div>
+        <div class="option" onclick="selectSingle(this, 5, 'occasional')"><div class="opt-box"></div><div class="opt-label">가끔 (월 1~2회)</div></div>
+        <div class="option" onclick="selectSingle(this, 5, 'first')"><div class="opt-box"></div><div class="opt-label">오늘이 처음</div></div>
+      </div>
+      <div class="q-nav">
+        <button class="btn-prev" onclick="prevQ(5)">← 이전</button>
+        <button class="btn-next" disabled onclick="nextQ(5)"><span>다음</span> <span class="arrow"></span></button>
+      </div>
+    </div>
+
+    <!-- Q6 -->
+    <div class="question-block" id="q6">
+      <div class="question-header"><div class="q-part">원인 분석</div><div class="q-number">Question 06 / 08</div></div>
+      <div class="q-text">악몽을 꾼 날,<br>잠들기 전 상태는 어땠나요?</div>
+      <div class="q-sub">복수 선택 가능</div>
+      <div class="options" id="opts-6">
+        <div class="option" onclick="toggleOption(this, 6, 'anxiety')"><div class="opt-box"></div><div class="opt-label">생각이나 걱정이 많았다</div></div>
+        <div class="option" onclick="toggleOption(this, 6, 'alcohol')"><div class="opt-box"></div><div class="opt-label">술을 마셨다</div></div>
+        <div class="option" onclick="toggleOption(this, 6, 'caffeine')"><div class="opt-box"></div><div class="opt-label">카페인을 늦게 섭취했다</div></div>
+        <div class="option" onclick="toggleOption(this, 6, 'lateeat')"><div class="opt-box"></div><div class="opt-label">늦게 식사를 했다</div></div>
+        <div class="option" onclick="toggleOption(this, 6, 'normal')"><div class="opt-box"></div><div class="opt-label">특별한 것 없었다</div></div>
+      </div>
+      <div class="q-nav">
+        <button class="btn-prev" onclick="prevQ(6)">← 이전</button>
+        <button class="btn-next" disabled onclick="nextQ(6)"><span>다음</span> <span class="arrow"></span></button>
+      </div>
+    </div>
+
+    <!-- Q7 -->
+    <div class="question-block" id="q7">
+      <div class="question-header"><div class="q-part">원인 분석</div><div class="q-number">Question 07 / 08</div></div>
+      <div class="q-text">악몽의 내용이 실제 경험이나<br>현재 걱정과 연관되어 있나요?</div>
+      <div class="q-sub">단일 선택</div>
+      <div class="options" id="opts-7">
+        <div class="option" onclick="selectSingle(this, 7, 'very')"><div class="opt-box"></div><div class="opt-label">매우 연관되어 있다</div></div>
+        <div class="option" onclick="selectSingle(this, 7, 'somewhat')"><div class="opt-box"></div><div class="opt-label">약간 연관된 것 같다</div></div>
+        <div class="option" onclick="selectSingle(this, 7, 'none')"><div class="opt-box"></div><div class="opt-label">전혀 관계없다</div></div>
+      </div>
+      <div class="q-nav">
+        <button class="btn-prev" onclick="prevQ(7)">← 이전</button>
+        <button class="btn-next" disabled onclick="nextQ(7)"><span>다음</span> <span class="arrow"></span></button>
+      </div>
+    </div>
+
+    <!-- Q8 -->
+    <div class="question-block" id="q8">
+      <div class="question-header"><div class="q-part">원인 분석</div><div class="q-number">Question 08 / 08</div></div>
+      <div class="q-text">요즘 전반적인<br>스트레스 수준은 어떤가요?</div>
+      <div class="q-sub">단일 선택</div>
+      <div class="options" id="opts-8">
+        <div class="option" onclick="selectSingle(this, 8, 'high')"><div class="opt-box"></div><div class="opt-label">매우 높다 — 일상에 영향을 줄 정도</div></div>
+        <div class="option" onclick="selectSingle(this, 8, 'mid')"><div class="opt-box"></div><div class="opt-label">보통 — 관리되고 있다</div></div>
+        <div class="option" onclick="selectSingle(this, 8, 'low')"><div class="opt-box"></div><div class="opt-label">낮다 — 별로 없다</div></div>
+      </div>
+      <div class="q-nav">
+        <button class="btn-prev" onclick="prevQ(8)">← 이전</button>
+        <button class="btn-next" disabled onclick="showResult()"><span>분석 결과 보기</span> <span class="arrow"></span></button>
+      </div>
+    </div>
+  </section>
+
+  <!-- RESULT -->
+  <section id="result-section">
+    <div class="result-header">
+      <div class="result-label">분석 결과</div>
+      <div class="type-summary">
+        <div class="type-label">당신의 악몽 유형</div>
+        <div class="type-name" id="type-name">-</div>
+        <div class="type-desc" id="type-desc">-</div>
+      </div>
+      <div class="diagnosis-text" id="diagnosis-text"></div>
+    </div>
+
+    <div class="metrics-section">
+      <div class="section-title">현재 상태</div>
+
+      <div class="metric-item">
+        <div class="metric-header">
+          <div class="metric-name">REM 수면 불안도</div>
+          <div class="metric-value" id="rem-value">—</div>
+        </div>
+        <div class="metric-bar"><div class="metric-fill fill-red" id="rem-bar"></div></div>
+        <div class="metric-status" id="rem-status"></div>
+      </div>
+
+      <div class="metric-item">
+        <div class="metric-header">
+          <div class="metric-name">감각 과활성 상태</div>
+          <div class="metric-value" id="sens-value">—</div>
+        </div>
+        <div class="metric-bar"><div class="metric-fill fill-yellow" id="sens-bar"></div></div>
+        <div class="metric-status" id="sens-status"></div>
+      </div>
+
+      <div class="metric-item">
+        <div class="metric-header">
+          <div class="metric-name">반복 악몽 경향</div>
+          <div class="metric-value" id="rep-value">—</div>
+        </div>
+        <div class="metric-bar"><div class="metric-fill fill-red" id="rep-bar"></div></div>
+        <div class="metric-status" id="rep-status"></div>
+      </div>
+
+      <div style="margin-top:28px;">
+        <div class="section-title">원인 경향</div>
+        <div id="cause-tags"></div>
+      </div>
+    </div>
+
+    <div class="improvements-section">
+      <div class="section-title">수면 개선 가이드</div>
+      <div id="improvements-list"></div>
+    </div>
+
+    <button class="restart-btn" onclick="restart()">← 다시 분석하기</button>
+  </section>
+
+  <footer>
+    <div class="footer-inner">
+      <div class="footer-note">REVEIL — 수면 분석 시스템</div>
+      <div class="footer-note">의학적 진단을 대체하지 않습니다</div>
+    </div>
+  </footer>
+<div class="survey-tip" style="justify-content:center;padding:10px 0 20px 0;">
+<span>☾</span><span>☁</span>
+<span>솔직하게 응답해 주세요. 분석 정확도를 높이는 데 도움이 됩니다.</span>
+</div>
+</div>
+
+<script>
+  // 답변 저장소
+  const answers = {
+    1: [], 2: [], 3: [], 4: [], 5: [], 6: [], 7: [], 8: []
+  };
+
+  let currentQ = 1;
+
+  function startQuiz() {
+    document.getElementById('intro-section').style.display = 'none';
+    document.getElementById('quiz-section').style.display = 'block';
+    showQ(1);
+  }
+
+  function showQ(n) {
+    document.querySelectorAll('.question-block').forEach(b => {
+      b.classList.remove('active');
+      b.style.display = 'none';
+    });
+    const block = document.getElementById('q' + n);
+    block.style.display = 'block';
+    setTimeout(() => block.classList.add('active'), 10);
+    currentQ = n;
+    updateProgress(n);
+  }
+
+  function updateProgress(n){
+    const pct = (n / 8) * 100;
+    const fill = document.getElementById('progress-fill');
+    const label = document.getElementById('progress-label');
+    if(fill) fill.style.width = pct + '%';
+    if(label) label.textContent = n + ' / 8';
+}
+
+  function toggleOption(el, qNum, val) {
+    // none 선택시 다른거 해제
+    if (val === 'none' || val === 'normal') {
+      document.querySelectorAll(`#opts-${qNum} .option`).forEach(o => o.classList.remove('selected'));
+      answers[qNum] = [val];
+    updateNextButton(qNum);
+      el.classList.add('selected');
+      updateNextButton(qNum);
+      return;
+    }
+    // 다른거 선택시 none 해제
+    const noneEl = document.querySelector(`#opts-${qNum} .option:last-child`);
+    if (noneEl && noneEl.classList.contains('selected')) {
+      noneEl.classList.remove('selected');
+      answers[qNum] = answers[qNum].filter(v => v !== 'none' && v !== 'normal');
+    }
+
+    if (el.classList.contains('selected')) {
+      el.classList.remove('selected');
+      answers[qNum] = answers[qNum].filter(v => v !== val);
+    } else {
+      el.classList.add('selected');
+      if (!answers[qNum].includes(val)) answers[qNum].push(val);
+    updateNextButton(qNum);
+    }
+  }
+
+  function selectSingle(el, qNum, val) {
+    document.querySelectorAll(`#opts-${qNum} .option`).forEach(o => o.classList.remove('selected'));
+    el.classList.add('selected');
+    answers[qNum] = [val];
+    updateNextButton(qNum);
+  }
+
+  function nextQ(n) {
+    if (answers[n].length === 0) {
+      // 선택 안 했으면 살짝 흔들기
+      const block = document.getElementById('q' + n);
+      block.style.animation = 'none';
+      block.offsetHeight;
+      block.style.animation = '';
+      return;
+    }
+    showQ(n + 1);
+  }
+
+  function prevQ(n) {
+    showQ(n - 1);
+  }
+
+  function calcMetrics() {
+    // REM 불안도: Q2 + Q5 + Q8
+    let rem = 0;
+    const q2map = { instant: 10, short: 40, long: 75, never: 95 };
+    const q5map = { daily: 90, weekly: 65, occasional: 30, first: 10 };
+    const q8map = { high: 85, mid: 45, low: 15 };
+    rem = Math.round(((q2map[answers[2][0]] || 0) + (q5map[answers[5][0]] || 0) + (q8map[answers[8][0]] || 0)) / 3);
+
+    // 감각 과활성: Q1 + Q2 + Q3
+    let sensQ1 = 0;
+    if (answers[1].includes('heart')) sensQ1 += 25;
+    if (answers[1].includes('sweat')) sensQ1 += 20;
+    if (answers[1].includes('breath')) sensQ1 += 20;
+    if (answers[1].includes('muscle')) sensQ1 += 15;
+    if (answers[1].includes('none')) sensQ1 = 5;
+    sensQ1 = Math.min(sensQ1, 80);
+
+    const q3map = { easy: 10, scared: 70, forced: 50, impossible: 90 };
+    const sens = Math.round((sensQ1 + (q2map[answers[2][0]] || 0) + (q3map[answers[3][0]] || 0)) / 3);
+
+    // 반복 악몽: Q4 + Q5 + Q7
+    const q4map = { always: 95, sometimes: 55, different: 20 };
+    const q7map = { very: 80, somewhat: 45, none: 15 };
+    const rep = Math.round(((q4map[answers[4][0]] || 0) + (q5map[answers[5][0]] || 0) + (q7map[answers[7][0]] || 0)) / 3);
+
+    return { rem, sens, rep };
+  }
+
+  function getCauses() {
+    const causes = [];
+    if (answers[6].includes('anxiety') || answers[8][0] === 'high') causes.push('스트레스 / 불안 유발형');
+    if (answers[6].includes('alcohol') || answers[6].includes('caffeine') || answers[6].includes('lateeat')) causes.push('신체 각성 유발형');
+    if (answers[7][0] === 'very') causes.push('경험 연관 / 기억 재공고화형');
+    if (answers[6].includes('normal') && answers[8][0] === 'low') causes.push('수면 환경 / 생체리듬 불균형 가능성');
+    if (causes.length === 0) causes.push('복합적 원인 가능성');
+    return causes;
+  }
+
+  function statusLabel(val) {
+    if (val >= 70) return { text: '높음 — 즉각적 개선 필요', cls: 'status-high' };
+    if (val >= 40) return { text: '주의 — 관리 권장', cls: 'status-mid' };
+    return { text: '양호', cls: 'status-low' };
+  }
+
+  function buildDiagnosis(m, causes) {
+    const parts = [];
+
+    if (m.rem >= 70) {
+      parts.push('REM 수면 중 각성 빈도가 <strong>높은 상태</strong>입니다');
+    } else if (m.rem >= 40) {
+      parts.push('REM 수면 중 간헐적 각성이 <strong>감지되는 상태</strong>입니다');
+    } else {
+      parts.push('REM 수면 불안도는 <strong>비교적 낮은 수준</strong>입니다');
+    }
+
+    if (m.sens >= 70) {
+      parts.push('악몽 후 교감신경이 <strong>빠르게 진정되지 않는 패턴</strong>을 보입니다');
+    } else if (m.sens >= 40) {
+      parts.push('각성 후 감각 반응이 <strong>평균 이상으로 유지</strong>되고 있습니다');
+    }
+
+    if (m.rep >= 70) {
+      parts.push('반복 악몽 경향이 <strong>뚜렷하게 나타나고 있습니다</strong>');
+    }
+
+    const causeStr = causes.includes('스트레스 / 불안 유발형')
+      ? '잠들기 전 불안 수준이 높아 뇌가 REM 수면 중에도 위협 신호를 계속 처리하는 것이 주요 원인으로 보입니다.'
+      : causes.includes('신체 각성 유발형')
+      ? '음주, 카페인, 늦은 식사 등 신체 각성 요인이 수면의 질에 영향을 주고 있을 가능성이 높습니다.'
+      : causes.includes('경험 연관 / 기억 재공고화형')
+      ? '악몽의 내용이 실제 경험과 연관되어 있어 기억 재공고화 과정에서 부정적 감정이 강화되고 있을 수 있습니다.'
+      : '수면 환경이나 생체리듬의 불균형이 원인일 가능성을 고려할 필요가 있습니다.';
+
+    return parts.join(', ') + '. ' + causeStr;
+  }
+
+  function buildImprovements(m, causes) {
+    const items = [];
+
+    // 1. 스트레스/불안 유발형
+    if (causes.includes('스트레스 / 불안 유발형') || m.rem >= 60) {
+      items.push({
+        title: '잠들기 전 불안 차단 — 걱정 적어두기',
+        basis: 'REM 불안도 높음 + 스트레스형 기반',
+        reason: '잠들기 전 생각이 많은 상태로 수면에 진입하면, 뇌는 REM 수면 중에도 위협 처리 활동을 멈추지 않습니다. 이 상태가 악몽의 직접적인 트리거가 됩니다.',
+        action: '취침 30분 전, 현재 머릿속에 있는 걱정과 할 일을 종이에 모두 적어 "뇌 밖으로 꺼내세요". 이 행위만으로도 전전두엽의 반추 활동이 유의미하게 감소합니다. 화면을 멀리하고 조명을 낮추는 것도 병행하세요.'
+      });
+    }
+
+    // 2. 감각 과활성
+    if (m.sens >= 50 || answers[1].includes('heart') || answers[1].includes('breath')) {
+      items.push({
+        title: '교감신경 안정화 — 4-7-8 호흡법',
+        basis: '감각 과활성 상태 기반',
+        reason: '심박수 증가, 호흡 가빠짐 등의 반응은 교감신경이 과활성화된 상태입니다. 이 상태로 다시 잠들면 REM 수면 진입 시 각성 반응이 더 강하게 나타납니다.',
+        action: '악몽 후 바로 눈을 감지 말고, 4초 들이쉬기 → 7초 멈추기 → 8초 내쉬기를 3~4회 반복하세요. 취침 전에도 동일하게 적용하면 수면 진입 시 각성 수준을 낮출 수 있습니다.'
+      });
+    }
+
+    // 3. 재입면 공포
+    if (answers[3][0] === 'scared' || answers[3][0] === 'impossible') {
+      items.push({
+        title: '수면 재진입 루틴 만들기',
+        basis: '재입면 공포 반응 기반',
+        reason: '악몽 후 바로 눈을 감으면 뇌가 "눈 감음 = 위험"으로 학습하기 시작합니다. 이 조건 반응이 쌓이면 입면 자체가 불안의 원인이 됩니다.',
+        action: '악몽에서 깬 직후 불을 켜고 2~3분 앉아있다가 다시 누우세요. 물 한 잔을 마시거나 짧게 스트레칭을 하는 것도 효과적입니다. "깨어있음 = 안전하다"는 인식을 뇌에 먼저 심어주어야 합니다.'
+      });
+    }
+
+    // 4. 반복 악몽 + 경험 연관
+    if (m.rep >= 55 || answers[4][0] === 'always' || answers[7][0] === 'very') {
+      items.push({
+        title: 'IRT 기법 — 악몽 결말 덮어쓰기',
+        basis: '반복 악몽 경향 + 기억 연관성 기반',
+        reason: '반복 악몽은 뇌의 기억 재공고화 과정에서 부정적 감정 회로가 강화된 결과입니다. 낮 시간에 그 회로를 의도적으로 수정하지 않으면 악몽은 계속됩니다.',
+        action: 'Image Rehearsal Therapy(IRT): 낮에 악몽의 내용을 떠올리고, 결말을 자신이 원하는 방향으로 바꿔 5~10분간 상상하세요. 이를 2주간 반복하면 반복 악몽 빈도가 임상적으로 유의미하게 감소합니다.'
+      });
+    }
+
+    // 5. 신체 각성 유발형
+    if (causes.includes('신체 각성 유발형')) {
+      items.push({
+        title: '수면 전 신체 각성 요인 제거',
+        basis: '신체 각성 유발형 원인 기반',
+        reason: '알코올은 REM 수면을 억제하다가 후반부에 반등을 일으켜 악몽 빈도를 높입니다. 카페인과 늦은 식사는 체온과 소화 활동을 높여 수면의 질을 떨어뜨립니다.',
+        action: '취침 6시간 전부터 카페인을 차단하고, 음주 후 수면은 가급적 피하세요. 저녁 식사는 취침 3시간 전에 마치는 것을 목표로 합니다. 이 세 가지만 지켜도 REM 수면의 안정성이 눈에 띄게 개선됩니다.'
+      });
+    }
+
+    // 최소 2개는 보장
+    if (items.length < 2) {
+      items.push({
+        title: '수면 위생 전반 점검',
+        basis: '전반적 수면 안정화 기반',
+        reason: '명확한 단일 원인이 없는 경우, 수면 환경과 생체리듬의 불균형이 복합적으로 작용하고 있을 가능성이 있습니다.',
+        action: '취침·기상 시간을 주 7일 동일하게 유지하고, 방 온도를 18~20°C로 맞추세요. 빛 자극을 최소화한 수면 환경을 만드는 것이 기본이며, 2주 실천 후에도 악몽이 지속되면 수면 전문의 상담을 권장합니다.'
+      });
+    }
+
+    return items;
+  }
+
+  function getTypeName(causes) {
+    if (causes.includes('스트레스 / 불안 유발형')) return '스트레스<br><em>불안 유발형</em>';
+    if (causes.includes('신체 각성 유발형')) return '신체<br><em>각성 유발형</em>';
+    if (causes.includes('경험 연관 / 기억 재공고화형')) return '경험 연관<br><em>기억 재공고화형</em>';
+    if (causes.includes('수면 환경 / 생체리듬 불균형 가능성')) return '수면 환경<br><em>생체리듬 불균형형</em>';
+    return '복합적<br><em>원인 복합형</em>';
+  }
+
+  function showResult() {
+    if (answers[8].length === 0) return;
+
+    const m = calcMetrics();
+    const causes = getCauses();
+
+    document.getElementById('quiz-section').style.display = 'none';
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    showResultContent(m, causes);
+  }
+
+  const typeInfoMap = {
+'스트레스 / 불안 유발형':['스트레스 · 불안 유발형','잠들기 전 걱정과 긴장이 REM 수면에도 영향을 주는 유형입니다.'],
+'신체 각성 유발형':['신체 각성 유발형','카페인·음주·늦은 식사 등 신체 각성 요인의 영향을 받는 유형입니다.'],
+'경험 연관 / 기억 재공고화형':['경험 연관형','실제 경험과 연결된 기억이 반복적으로 악몽에 반영되는 유형입니다.'],
+'수면 환경 / 생체리듬 불균형 가능성':['생체리듬 불균형형','수면 환경이나 생활 리듬의 영향이 의심되는 유형입니다.'],
+'복합적 원인 가능성':['복합 원인형','여러 요인이 함께 영향을 주는 것으로 보입니다.']
+};
+
+function showResultContent(m, causes) {
+    document.getElementById('result-section').style.display = 'block';
+
+    // 진단
+    const mainCause = causes[0];
+    if(typeInfoMap[mainCause]){
+      document.getElementById('type-name').textContent = typeInfoMap[mainCause][0];
+      document.getElementById('type-desc').textContent = typeInfoMap[mainCause][1];
+    }
+    document.getElementById('diagnosis-text').innerHTML = buildDiagnosis(m, causes);
+
+    // 지표
+    setTimeout(() => {
+      const remEl = document.getElementById('rem-bar');
+      remEl.style.width = m.rem + '%';
+      document.getElementById('rem-value').textContent = m.rem + '%';
+      const remS = statusLabel(m.rem);
+      const remSt = document.getElementById('rem-status');
+      remSt.textContent = remS.text;
+      remSt.className = 'metric-status ' + remS.cls;
+
+      const sensEl = document.getElementById('sens-bar');
+      sensEl.style.width = m.sens + '%';
+      document.getElementById('sens-value').textContent = m.sens + '%';
+      const sensS = statusLabel(m.sens);
+      const sensSt = document.getElementById('sens-status');
+      sensSt.textContent = sensS.text;
+      sensSt.className = 'metric-status ' + sensS.cls;
+
+      const repEl = document.getElementById('rep-bar');
+      repEl.style.width = m.rep + '%';
+      document.getElementById('rep-value').textContent = m.rep + '%';
+      const repS = statusLabel(m.rep);
+      const repSt = document.getElementById('rep-status');
+      repSt.textContent = repS.text;
+      repSt.className = 'metric-status ' + repS.cls;
+    }, 100);
+
+    // 원인 태그
+    const tagsEl = document.getElementById('cause-tags');
+    tagsEl.innerHTML = causes.map(c =>
+      `<div class="cause-tag"><span class="cause-dot"></span>${c}</div>`
+    ).join('');
+
+    // 개선방안
+    const improvements = buildImprovements(m, causes);
+    const listEl = document.getElementById('improvements-list');
+    listEl.innerHTML = improvements.map((item, i) => `
+      <div class="improvement-item">
+        <div class="improvement-head">
+          <div class="improvement-num">0${i + 1}</div>
+          <div>
+            <div class="improvement-title">${item.title}</div>
+            <div class="improvement-basis">${item.basis}</div>
+          </div>
+        </div>
+        <div class="improvement-body">
+          <div class="improvement-reason">${item.reason}</div>
+          <div class="improvement-action">${item.action}</div>
+        </div>
+      </div>
+    `).join('');
+
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  function restart() {
+    // 초기화
+    for (let i = 1; i <= 8; i++) answers[i] = [];
+    document.querySelectorAll('.option').forEach(o => o.classList.remove('selected'));
+    document.getElementById('result-section').style.display = 'none';
+    document.getElementById('intro-section').style.display = 'block';
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+function updateNextButton(qNum){
+  const block = document.getElementById('q'+qNum);
+  if(!block) return;
+  const btn = block.querySelector('.btn-next');
+  if(btn) btn.disabled = answers[qNum].length === 0;
+}
+
+</script>
+</body>
+</html>
+<style>
+.status-high{color:#C98FA4 !important;}
+.status-mid{color:#D5A7B6 !important;}
+.improvement-basis{color:#D5A7B6 !important;}
+</style>
+
+<style>
+.status-high{color:#C98FA4 !important;}
+.status-mid{color:#D5A7B6 !important;}
+.improvement-basis{color:#D5A7B6 !important;}
+</style>
+
+<style>
+.status-high{color:#C98FA4 !important;}
+.status-mid{color:#D5A7B6 !important;}
+.improvement-basis{color:#D5A7B6 !important;}
+</style>
+
+<style>
+.improvements-section{
+    background:rgba(255,255,255,0.18) !important;
+}
+.improvement-item{
+    background:#FCFDFD !important;
+}
+.improvement-head{
+    background:#FCFDFD !important;
+}
+</style>
